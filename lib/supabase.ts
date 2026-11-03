@@ -53,9 +53,20 @@ export async function envoyerLien(email: string) {
   });
 }
 
+// Messages techniques (souvent en anglais) → phrases compréhensibles par un client.
+const TRADUCTIONS: [RegExp, string][] = [
+  [/email rate limit exceeded/i, "Trop d'e-mails envoyés pour le moment. Réessayez dans une heure, ou utilisez le dernier e-mail reçu."],
+  [/only request this after (\d+) seconds/i, "Un e-mail vient d'être envoyé. Patientez une minute avant d'en redemander un."],
+  [/invalid.*email|email.*invalid/i, "Cette adresse e-mail ne semble pas valide."],
+  [/Failed to fetch|NetworkError|Load failed/i, "Connexion internet indisponible. Vérifiez le réseau et réessayez."],
+  [/row-level security/i, "Action non autorisée pour ce compte."],
+  [/payload too large|exceeded the maximum allowed size/i, "Fichier trop lourd (20 Mo maximum)."],
+];
+
 export function messageErreur(e: unknown): string {
-  if (e && typeof e === "object" && "message" in e) return String((e as { message: unknown }).message);
-  return "Erreur inconnue";
+  const brut = e && typeof e === "object" && "message" in e ? String((e as { message: unknown }).message) : "";
+  for (const [motif, texte] of TRADUCTIONS) if (motif.test(brut)) return texte;
+  return brut || "Erreur inconnue";
 }
 
 export const dateCourte = (s: string | null) =>
